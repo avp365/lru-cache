@@ -1,19 +1,21 @@
 package main
 
-import "fmt"
+import (
+	"container/list"
+	"fmt"
+)
+
+type CacheData struct {
+	Key   string
+	Value string
+}
 
 func main() {
 	cap := 5
-	stack := make([]string, 0, cap)
+	list := list.New()
+	e := list.PushFront(CacheData{"key", "value1"})
 
-	stack = append(stack, "A")
-	stack = append(stack, "B")
-	stack = append(stack, "C")
-	stack = append(stack, "D")
-	fmt.Println("len\n", len(stack))
-	fmt.Println("stack\n", stack[0])
-
-	pr := &stack[3]
-	fmt.Println("pr\n", pr)
+	fmt.Println("len\n", list.Len())
+	fmt.Println("e\n", e)
 
 }
