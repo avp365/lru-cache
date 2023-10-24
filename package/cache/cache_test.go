@@ -90,7 +90,7 @@ func TestTime_1(t *testing.T) {
 }
 func TestTime_2(t *testing.T) {
 
-	n := 50
+	n := 50000
 	key := "someKey"
 	c, _ := NewLRUCache(n)
 
