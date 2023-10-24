@@ -1,9 +1,9 @@
 package cache
 
 import (
+	"container/list"
 	"errors"
-	"fmt"
-	"unsafe"
+	"sync"
 )
 
 type LRUCacheInterface interface {
@@ -19,11 +19,15 @@ type LRUCacheInterface interface {
 	// Удаляет элемент из кеша, в случае успеха возврашает true, в случае отсутствия элемента - false
 	Remove(key string) (ok bool)
 }
-
+type CacheData struct {
+	Key   string
+	Value string
+}
 type LRUCache struct {
 	Cap      int
-	CacheMap map[string]*[]string
-	Cache    [][]string
+	CacheMap map[string]*list.Element
+	Cache    *list.List
+	mutex    sync.Mutex
 }
 
 func NewLRUCache(n int) (*LRUCache, error) {
@@ -31,20 +35,24 @@ func NewLRUCache(n int) (*LRUCache, error) {
 	if n < 1 {
 		return nil, errors.New("n must equal 1 or more!")
 	}
-	return &LRUCache{n, make(map[string]*[]string), make([][]string, 0, n)}, nil
+	return &LRUCache{Cap: n, CacheMap: make(map[string]*list.Element), Cache: list.New()}, nil
 }
 
-func (с *LRUCache) Add(key, value string) bool {
+func (c *LRUCache) Add(key, value string) bool {
 
-	if _, ok := с.CacheMap[key]; ok == false {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
-		с.Cache = append(с.Cache, []string{key, value})
-		с.CacheMap[key] = &с.Cache[(len(с.Cache) - 1)]
+	if _, ok := c.CacheMap[key]; ok == false {
 
-		if len(с.Cache) > с.Cap {
-			keyDelete := с.Cache[0][0]
-			с.Remove(keyDelete)
-			с.Cache = с.Cache[1:]
+		c.CacheMap[key] = c.Cache.PushBack(CacheData{key, value})
+
+		if c.Cache.Len() > c.Cap {
+
+			e := c.Cache.Front()
+			key := e.Value.(CacheData).Key
+			c.Cache.Remove(e)
+			delete(c.CacheMap, key)
 		}
 
 		return true
@@ -52,37 +60,29 @@ func (с *LRUCache) Add(key, value string) bool {
 
 	return false
 }
-func (с *LRUCache) Get(key string) (value string, ok bool) {
+func (c *LRUCache) Get(key string) (value string, ok bool) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	if _, ok := c.CacheMap[key]; ok == true {
+		e := c.CacheMap[key]
+		c.Cache.PushBack(e)
 
-	if _, ok := с.CacheMap[key]; ok == true {
-		i := с.getIndexByPtr(с.CacheMap[key])
-
-		с.Cache = append(с.Cache, с.Cache[i])
-		с.Cache = append(с.Cache[:i], с.Cache[i+1:]...)
-		return с.Cache[i][1], true
+		return e.Value.(CacheData).Value, true
 	}
 
 	return "", false
 
 }
-func (с *LRUCache) Remove(key string) (ok bool) {
+func (c *LRUCache) Remove(key string) (ok bool) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	if _, ok := c.CacheMap[key]; ok == true {
 
-	if _, ok := с.CacheMap[key]; ok == true {
-
-		i := с.getIndexByPtr(с.CacheMap[key])
-		с.Cache = append(с.Cache[:i], с.Cache[i+1:]...)
-		delete(с.CacheMap, key)
+		c.Cache.Remove(c.CacheMap[key])
+		delete(c.CacheMap, key)
 
 		return true
 	}
 
 	return false
-}
-
-func (с *LRUCache) getIndexByPtr(ptr *[]string) int {
-	size := unsafe.Sizeof(с.Cache[0])
-	offset := uintptr(unsafe.Pointer(ptr)) - uintptr(unsafe.Pointer(&с.Cache[0]))
-
-	fmt.Println(offset / size)
-	return 0
 }

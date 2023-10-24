@@ -6,16 +6,16 @@ import (
 )
 
 type CacheData struct {
-	Key   string
-	Value string
+	Key  string
+	Data string
 }
 
 func main() {
-	cap := 5
+	//cap := 5
 	list := list.New()
-	e := list.PushFront(CacheData{"key", "value1"})
+	list.PushFront(CacheData{"key1", "value1"})
+	f := list.Front()
 
-	fmt.Println("len\n", list.Len())
-	fmt.Println("e\n", e)
+	fmt.Println("data\n", f.Value.(CacheData))
 
 }

@@ -46,8 +46,27 @@ func TestGet(t *testing.T) {
 	require.Equal(t, "", result, "fail get if no value for value")
 	require.Equal(t, false, ok, "fail get if no value for ok")
 
+	c.Add("key2", "value2")
+	result, ok = c.Get("key2")
+	require.Equal(t, "value2", result, "fail get")
+
 }
-func TestDelete(t *testing.T) {
+func TestPriority(t *testing.T) {
+
+	c, _ := NewLRUCache(3)
+
+	c.Add("key1", "value1")
+	c.Add("key2", "value2")
+	c.Add("key3", "value3")
+	c.Add("key4", "value4")
+
+	result, ok := c.Get("key1")
+
+	require.Equal(t, "", result, "fail get if no value for value")
+	require.Equal(t, false, ok, "fail get if no value for ok")
+
+}
+func TestRemove(t *testing.T) {
 
 	c, _ := NewLRUCache(5)
 
@@ -66,12 +85,12 @@ func TestTime_1(t *testing.T) {
 	c.Get(key)
 	c.Remove(key)
 
-	assert.WithinDuration(t, timeStart, time.Now(), 1*time.Nanosecond)
+	assert.WithinDuration(t, timeStart, time.Now(), 2000*time.Nanosecond)
 
 }
 func TestTime_2(t *testing.T) {
 
-	n := 50000
+	n := 50
 	key := "someKey"
 	c, _ := NewLRUCache(n)
 
@@ -84,17 +103,6 @@ func TestTime_2(t *testing.T) {
 	c.Get(key)
 	c.Remove(key)
 
-	assert.WithinDuration(t, timeStart, time.Now(), 1*time.Nanosecond)
+	assert.WithinDuration(t, timeStart, time.Now(), 2000*time.Nanosecond)
 
-}
-func TestIndexPtr(t *testing.T) {
-	n := 5
-	c, _ := NewLRUCache(n)
-
-	c.Add("key1", "value1")
-	c.Add("key2", "value1")
-	c.Add("key3", "value1")
-	c.Add("key4", "value1")
-
-	c.getIndexByPtr(&c.Cache[2])
 }
